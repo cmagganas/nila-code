@@ -7,12 +7,13 @@ import { splitForToolCalls } from '../shared/transcript';
 import { TranscriptView } from './TranscriptView';
 import { cwd } from 'node:process';
 import { join } from 'node:path';
-import { discoverCommands } from '../commands/discovery';
+import { discoverCommands, loadCommand } from '../commands/discovery';
 import { parseInput } from '../commands/parser';
 import { isBuiltinCommand, executeBuiltinHelp } from '../commands/builtins';
 import { formatCommandMessage } from '../commands/invocation';
-import { discoverSkills } from '../skills/discovery';
+import { discoverSkills, loadSkill } from '../skills/discovery';
 import { formatSkillMessage } from '../skills/invocation';
+import { buildRegistry, saveRegistry, loadRegistry, isRegistryStale } from '../registry/index';
 import type { Command } from '../commands/types';
 import type { Skill } from '../skills/types';
 
@@ -67,13 +68,54 @@ export function App() {
   }, [exit]);
 
   useEffect(() => {
-    const commandsPath = join(cwd(), '.nila', 'commands');
-    const discovered = discoverCommands(commandsPath);
-    setCommands(discovered);
+    const basePath = join(cwd(), '.nila');
+    const cachePath = join(basePath, 'cache', 'registry.json');
+    
+    const cachedRegistry = loadRegistry(cachePath);
+    const useCache = cachedRegistry !== null && !isRegistryStale(cachedRegistry, basePath);
+    
+    if (useCache) {
+      const commandPaths = cachedRegistry.entries
+        .filter(e => e.type === 'command')
+        .map(e => e.path);
+      const skillPaths = cachedRegistry.entries
+        .filter(e => e.type === 'skill')
+        .map(e => e.path);
+      
+      const loadedCommands: Command[] = commandPaths
+        .map(path => {
+          try {
+            return loadCommand(path);
+          } catch {
+            return null;
+          }
+        })
+        .filter((cmd): cmd is Command => cmd !== null);
+      
+      const loadedSkills: Skill[] = skillPaths
+        .map(path => {
+          try {
+            return loadSkill(path);
+          } catch {
+            return null;
+          }
+        })
+        .filter((skill): skill is Skill => skill !== null);
+      
+      setCommands(loadedCommands);
+      setSkills(loadedSkills);
+    } else {
+      const commandsPath = join(basePath, 'commands');
+      const discovered = discoverCommands(commandsPath);
+      setCommands(discovered);
 
-    const skillsPath = join(cwd(), '.nila', 'skills');
-    const discoveredSkills = discoverSkills(skillsPath);
-    setSkills(discoveredSkills);
+      const skillsPath = join(basePath, 'skills');
+      const discoveredSkills = discoverSkills(skillsPath);
+      setSkills(discoveredSkills);
+      
+      const registry = buildRegistry(discovered, discoveredSkills);
+      saveRegistry(registry, cachePath);
+    }
   }, []);
 
   useEffect(() => {
