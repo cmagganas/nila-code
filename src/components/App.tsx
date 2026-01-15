@@ -25,7 +25,7 @@ type ToolCallItem = {
 export function App() {
   const { exit } = useApp();
   const { stdout } = useStdout();
-  const { theme } = useTheme();
+  const { theme, themeName, setTheme } = useTheme();
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [toolCalls, setToolCalls] = useState<ToolCallItem[]>([]);
 
@@ -128,6 +128,11 @@ export function App() {
   const contentWidth = Math.max(10, terminalWidth - 4);
 
   useInput((input, key) => {
+    if (key.ctrl && input === 't') {
+      setTheme(themeName === 'dark' ? 'light' : 'dark');
+      return;
+    }
+
     if (hasBanner) return;
     const page = Math.max(1, transcriptHeight - 1);
 
