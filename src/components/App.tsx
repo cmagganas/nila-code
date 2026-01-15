@@ -5,6 +5,7 @@ import { Input } from './Input';
 import { MessageRole, ToolCallStatus } from '../shared/types';
 import { splitForToolCalls } from '../shared/transcript';
 import { TranscriptView } from './TranscriptView';
+import { useTheme } from './ThemeProvider';
 import { cwd } from 'node:process';
 
 type MessageItem = {
@@ -24,6 +25,7 @@ type ToolCallItem = {
 export function App() {
   const { exit } = useApp();
   const { stdout } = useStdout();
+  const { theme } = useTheme();
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [toolCalls, setToolCalls] = useState<ToolCallItem[]>([]);
 
@@ -115,15 +117,6 @@ export function App() {
     '╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝     ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝',
   ];
 
-  const gradientColors = [
-    '#ff6b6b',
-    '#feca57',
-    '#48dbfb',
-    '#1dd1a1',
-    '#5f27cd',
-    '#ff9ff3',
-  ];
-
   const { before, afterAssistant } = splitForToolCalls({
     messages,
     toolCalls,
@@ -175,14 +168,14 @@ export function App() {
         >
           <Box flexDirection="column">
             {banner.map((line, i) => (
-              <Text key={i} color={gradientColors[i]}>
+              <Text key={i} color={theme.banner[i]}>
                 {line}
               </Text>
             ))}
           </Box>
 
           <Box marginTop={2}>
-            <Text color="gray" dimColor>
+            <Text color={theme.text.secondary} dimColor>
               {cwd()}
             </Text>
           </Box>
