@@ -18,9 +18,17 @@ export enum ToolName {
 
 export enum FormattedTextPartType {
   TEXT = 'text',
+  BOLD = 'bold',
+  ITALIC = 'italic',
   CODE = 'code',
   INLINE_CODE = 'inlineCode',
 }
+
+export type FormattedTextPart = {
+  type: FormattedTextPartType;
+  content: string;
+  color?: string;
+};
 
 export type TranscriptLine = {
   text: string;
